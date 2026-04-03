@@ -20,7 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const revealSelectors = [
     "main > .hero",
     "main > .title-img",
-    "main > .gallery",
+    "main > .gallery-2 img",
+    "main > .title-img",
     "main > .duo-gallery",
     "main > .vertical-gallery",
     "main > .square-grid",
