@@ -4,6 +4,11 @@ html, body {
   padding: 0;
   height: 100%;
   background: black;
+}
+
+/* ✅ FIX iOS: overflow-x:hidden en AMBOS html+body rompe position:fixed en Safari.
+   Solo va en html. Body lo dejamos libre. */
+html {
   overflow-x: hidden;
 }
 
@@ -11,29 +16,38 @@ body {
   position: relative;
   font-family: 'Arial', sans-serif;
   color: white;
+  /* ✅ FIX iOS: sin overflow en body para que los fixed funcionen */
 }
 
-/* 🔥 FONDO DINÁMICO */
-body::before {
-  content: "";
+/* ✅ FIX iOS: Reemplazamos body::before / body::after por un div real
+   porque position:fixed en pseudo-elementos falla en Safari cuando
+   el body tiene overflow:hidden.
+   → En el HTML agrega <div class="bg-layer"></div> como primer hijo de <body> */
+
+.bg-layer {
   position: fixed;
   inset: 0;
-  background: url("./portfolio-images/Capa 2.png") center/cover no-repeat;
+  background: url("./portfolio-images/Capa 2.png") center / cover no-repeat;
   z-index: -2;
+  /* ✅ FIX iOS: forzar GPU para que el fixed no parpadee */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  pointer-events: none;
 }
 
-/* 🔥 OVERLAY OSCURO */
-body::after {
+.bg-layer::after {
   content: "";
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
-  z-index: -1;
 }
 
 main {
   position: relative;
   z-index: 1;
+  /* ✅ FIX iOS: evita overflow lateral sin afectar fixed */
+  overflow-x: clip;
 }
 
 /* --- ELEMENTOS GLOBALES --- */
@@ -41,6 +55,8 @@ main {
   width: 100%;
   display: block;
   margin-bottom: 20px;
+  /* ✅ FIX iOS: height:auto garantiza que las imágenes no colapsen */
+  height: auto;
 }
 
 .hero-picture {
@@ -56,53 +72,61 @@ main {
   margin: 80px auto 40px auto;
   max-width: 600px;
   width: 90%;
+  height: auto; /* ✅ FIX iOS */
 }
 
 .js-scroll-reveal .reveal-on-scroll {
   opacity: 0;
+  -webkit-transform: translate3d(0, 28px, 0);
   transform: translate3d(0, 28px, 0);
   transition:
     opacity 0.82s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms),
+    -webkit-transform 0.82s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms),
     transform 0.82s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
   will-change: opacity, transform;
 }
 
 .js-scroll-reveal .reveal-on-scroll.is-visible {
   opacity: 1;
+  -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
 }
 
 /* --- ANIMACIÓN UNIVERSAL (HOVER) --- */
-/* Se aplica a todas las imágenes de todas tus galerías */
-.gallery img, 
-.duo-gallery img, 
-.v-item img, 
-.s-item img, 
-.triple-gallery img, 
-.grid-item img, 
-.main-feature img, 
- .card-item img,
- .tony-black-card img {
-  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), 
+.gallery img,
+.gallery-2 img,
+.duo-gallery img,
+.v-item img,
+.s-item img,
+.triple-gallery img,
+.grid-item img,
+.main-feature img,
+.card-item img,
+.tony-black-card img {
+  transition: -webkit-transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
+              transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
               filter 0.3s ease;
   cursor: pointer;
 }
 
-.gallery img:hover, 
-.duo-gallery img:hover, 
-.v-item:hover img, 
-.s-item:hover img, 
-.triple-gallery img:hover, 
-.grid-item:hover img, 
-.main-feature img:hover, 
- .card-item:hover img,
- .tony-black-card:hover img {
+.gallery img:hover,
+.gallery-2 img:hover,
+.duo-gallery img:hover,
+.v-item:hover img,
+.s-item:hover img,
+.triple-gallery img:hover,
+.grid-item:hover img,
+.main-feature img:hover,
+.card-item:hover img,
+.tony-black-card:hover img {
+  -webkit-transform: scale(1.05);
   transform: scale(1.05);
   filter: brightness(1.1) contrast(1.1);
 }
 
 @media (hover: none) and (pointer: coarse) {
   .gallery img:hover,
+  .gallery-2 img:hover,
   .duo-gallery img:hover,
   .v-item:hover img,
   .s-item:hover img,
@@ -111,6 +135,7 @@ main {
   .main-feature img:hover,
   .card-item:hover img,
   .tony-black-card:hover img {
+    -webkit-transform: none;
     transform: none;
     filter: none;
   }
@@ -125,6 +150,7 @@ main {
   width: 90%;
   max-width: 1400px;
   margin: 0 auto 100px auto;
+  box-sizing: border-box;
 }
 
 .gallery img {
@@ -132,11 +158,23 @@ main {
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
+  /* ✅ FIX iOS: evita que Safari redondee imágenes de forma inesperada */
+  -webkit-border-radius: 4px;
 }
 
-/* Posicionamiento para las imágenes grandes de la galería 2 */
+/* ✅ FIX: EP Artworks gallery-2 — big-1 y big-2 en escritorio */
 .big-1 { grid-column: 5 / 7; grid-row: 1 / 3; }
 .big-2 { grid-column: 5 / 7; grid-row: 3 / 5; }
+
+/* ✅ FIX iOS CRÍTICO: gallery-2 necesita que sus imágenes tengan
+   height declarado cuando grid-auto-rows es 200px */
+.gallery-2 img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  min-height: 0; /* evita colapso en iOS Safari */
+}
 
 /* --- DUO GALLERY (Posters) --- */
 .duo-gallery {
@@ -146,11 +184,14 @@ main {
   width: 90%;
   max-width: 1200px;
   margin: 100px auto;
+  box-sizing: border-box;
 }
 
 .duo-gallery img {
   width: 100%;
+  height: auto;
   object-fit: cover;
+  display: block;
 }
 
 /* --- VERTICAL & SQUARE GRIDS --- */
@@ -161,20 +202,34 @@ main {
   max-width: 1100px;
   margin: 40px auto;
   padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .v-item, .s-item, .grid-item, .card-item {
-  overflow: hidden; /* Mantiene el zoom dentro del cuadro */
+  overflow: hidden;
   background: #000;
+  /* ✅ FIX iOS: isolation crea contexto nuevo para overflow:hidden */
+  isolation: isolate;
 }
 
-.v-item { aspect-ratio: 4 / 5; }
-.s-item { aspect-ratio: 1 / 1; border-radius: 8px; }
+/* ✅ FIX iOS: aspect-ratio con fallback de altura mínima */
+.v-item {
+  aspect-ratio: 4 / 5;
+  min-height: 160px; /* fallback para iOS 14 */
+}
+
+.s-item {
+  aspect-ratio: 1 / 1;
+  min-height: 120px;
+  border-radius: 8px;
+  -webkit-border-radius: 8px;
+}
 
 .vertical-gallery img, .square-grid img, .triple-gallery img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .triple-gallery { grid-template-columns: repeat(3, 1fr); }
@@ -187,6 +242,7 @@ main {
   max-width: 1200px;
   margin: 0 auto 4px auto;
   padding: 5px;
+  box-sizing: border-box;
 }
 
 .grid-quad {
@@ -196,9 +252,25 @@ main {
   gap: 10px;
 }
 
-.grid-item { aspect-ratio: 1 / 1; display: flex; }
-.main-feature { display: flex; background: #000; }
-.main-feature img, .grid-item img { width: 100%; height: 100%; object-fit: cover; }
+.grid-item {
+  aspect-ratio: 1 / 1;
+  min-height: 100px;
+  display: flex;
+}
+
+.main-feature {
+  display: flex;
+  background: #000;
+}
+
+.main-feature img,
+.grid-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .main-feature-picture {
   display: block;
   width: 100%;
@@ -216,6 +288,7 @@ main {
   width: min(1500px, calc(100% - 32px));
   margin: 88px auto 120px;
   padding: 0 clamp(6px, 1.6vw, 18px);
+  box-sizing: border-box;
 }
 
 .title-cards-section-secondary {
@@ -223,7 +296,9 @@ main {
 }
 
 .title-cards-heading-wrap {
+  display: -webkit-flex;
   display: flex;
+  -webkit-justify-content: center;
   justify-content: center;
 }
 
@@ -231,6 +306,7 @@ main {
   display: block;
   width: min(460px, 34vw);
   max-width: 100%;
+  height: auto;
   margin: 0 auto clamp(20px, 2vw, 28px);
 }
 
@@ -260,7 +336,9 @@ main {
   display: grid;
   grid-template-columns: repeat(2, minmax(280px, 520px));
   gap: clamp(16px, 1.8vw, 24px);
+  -webkit-justify-content: center;
   justify-content: center;
+  -webkit-align-items: start;
   align-items: start;
   margin: 0 auto;
 }
@@ -273,7 +351,9 @@ main {
 .cards-grid-png {
   grid-template-columns: repeat(2, minmax(280px, 520px));
   max-width: 1064px;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-items: center;
   justify-items: center;
 }
 
@@ -281,21 +361,26 @@ main {
   grid-template-columns: repeat(2, minmax(260px, 390px));
   max-width: 840px;
   gap: clamp(18px, 2.2vw, 28px);
+  -webkit-justify-items: center;
   justify-items: center;
+  -webkit-align-items: start;
   align-items: start;
 }
 
 .cards-grid-three .card-item:last-child {
   grid-column: 1 / -1;
+  -webkit-justify-self: center;
   justify-self: center;
   width: min(100%, 520px);
 }
 
 .card-item {
   aspect-ratio: 16 / 9;
+  min-height: 160px; /* ✅ FIX iOS: fallback para aspect-ratio */
   width: 100%;
   overflow: hidden;
   border-radius: 2px;
+  -webkit-border-radius: 2px;
   background: #050505;
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
 }
@@ -304,7 +389,7 @@ main {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Esto evita que la imagen se estire si no es 16:9 original */
+  object-fit: cover;
 }
 
 .card-item-png {
@@ -312,8 +397,11 @@ main {
   min-height: clamp(220px, 26vw, 340px);
   width: min(100%, 460px);
   padding: 18px;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   background: transparent;
   box-shadow: none;
@@ -325,10 +413,12 @@ main {
   height: auto;
   max-height: clamp(220px, 26vw, 340px);
   object-fit: contain;
+  -webkit-transform: translate(10px, 8px);
   transform: translate(10px, 8px);
 }
 
 .card-item-png:hover img {
+  -webkit-transform: translate(10px, 8px) scale(1.03);
   transform: translate(10px, 8px) scale(1.03);
 }
 
@@ -345,8 +435,10 @@ main {
   width: 100%;
   height: auto;
   object-fit: contain;
+  display: block;
 }
 
+/* --- TONY BLACK SECTIONS --- */
 .tony-black-section {
   width: min(1400px, calc(100% - 32px));
   margin: 96px auto 120px;
@@ -360,7 +452,9 @@ main {
 
 .tony-black-heading-wrap,
 .tony-black-caption-wrap {
+  display: -webkit-flex;
   display: flex;
+  -webkit-justify-content: center;
   justify-content: center;
 }
 
@@ -368,6 +462,7 @@ main {
   display: block;
   width: min(980px, 92vw);
   max-width: 100%;
+  height: auto;
   margin: 0 auto clamp(24px, 2.4vw, 34px);
 }
 
@@ -375,7 +470,9 @@ main {
   display: grid;
   grid-template-columns: repeat(3, minmax(220px, 370px));
   gap: clamp(18px, 2vw, 28px);
+  -webkit-justify-content: center;
   justify-content: center;
+  -webkit-align-items: start;
   align-items: start;
   margin: 0 auto;
 }
@@ -391,6 +488,7 @@ main {
   gap: clamp(18px, 2vw, 28px);
   max-width: 1240px;
   margin: 0 auto;
+  -webkit-align-items: stretch;
   align-items: stretch;
 }
 
@@ -410,6 +508,7 @@ main {
 .tony-black-editorial-feature {
   width: 100%;
   height: 100%;
+  display: -webkit-flex;
   display: flex;
 }
 
@@ -417,6 +516,7 @@ main {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .tony-black-card {
@@ -436,10 +536,12 @@ main {
 .tony-black-caption {
   display: block;
   width: min(510px, 78vw);
+  height: auto;
   max-width: 100%;
   margin-top: 22px;
 }
 
+/* --- VISUALIZERS --- */
 .visualizers-section {
   width: min(1280px, calc(100% - 32px));
   margin: 96px auto 120px;
@@ -450,8 +552,11 @@ main {
 .visualizer-frame-wrap {
   width: min(1168px, 100%);
   margin: 0 auto;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: flex-start;
   align-items: flex-start;
 }
 
@@ -459,7 +564,20 @@ main {
   position: relative;
   width: 100%;
   aspect-ratio: 1168 / 674;
+  /* ✅ FIX iOS: fallback para aspect-ratio */
+  padding-bottom: 0;
   overflow: hidden;
+}
+
+/* ✅ FIX iOS: aspect-ratio no funciona bien en iOS 14 y anterior en ciertos contextos.
+   Usamos el padding-bottom trick como fallback */
+@supports not (aspect-ratio: 1168 / 674) {
+  .visualizer-stage {
+    height: 0;
+    padding-bottom: 57.7%; /* 674/1168 */
+    overflow: hidden;
+    position: relative;
+  }
 }
 
 .visualizer-video {
@@ -471,6 +589,7 @@ main {
   background: #000;
   border: 0;
   border-radius: 2px;
+  -webkit-border-radius: 2px;
 }
 
 .visualizer-frame {
@@ -480,16 +599,50 @@ main {
   height: auto;
   z-index: 1;
   pointer-events: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 
 .visualizer-caption {
   display: block;
+  -webkit-align-self: center;
   align-self: center;
   width: auto;
   height: clamp(18px, 2.3vw, 29px);
   max-width: 100%;
   margin-top: 10px;
+}
+
+/* --- LIGHTBOX --- */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  display: none;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-align-items: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.9);
+  /* ✅ FIX iOS: prefijo webkit para backdrop-filter */
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
+  z-index: 9999;
+  padding: 20px;
+  /* ✅ FIX iOS: safe area para el notch */
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  overscroll-behavior: contain;
+  /* ✅ FIX iOS: forzar GPU para el fixed */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+}
+
+#lightbox.active { display: -webkit-flex; display: flex; }
+
+body.lightbox-open {
+  /* ✅ FIX iOS: en lugar de overflow:hidden en body usamos position:fixed */
+  position: fixed;
+  width: 100%;
+  overflow: hidden;
 }
 
 .close {
@@ -500,25 +653,10 @@ main {
   font-size: 2.8rem;
   line-height: 1;
   cursor: pointer;
-}
-/* --- LIGHTBOX --- */
-#lightbox {
-  position: fixed;
-  inset: 0;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(15px);
-  z-index: 9999;
-  padding: 20px;
-  overscroll-behavior: contain;
-}
-
-#lightbox.active { display: flex; }
-
-body.lightbox-open {
-  overflow: hidden;
+  /* ✅ FIX iOS: área tap más grande para dedos */
+  padding: 10px;
+  /* ✅ FIX iOS: evitar delay de 300ms en tap */
+  touch-action: manipulation;
 }
 
 #lightbox-img {
@@ -526,60 +664,58 @@ body.lightbox-open {
   max-height: 90vh;
   object-fit: contain;
   border-radius: 8px;
+  -webkit-border-radius: 8px;
   box-shadow: 0 0 50px rgba(255,255,255,0.1);
 }
 
-/* --- RESPONSIVE --- */
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
 @media (max-width: 900px) {
   .gallery {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-auto-rows: auto;
     gap: 14px;
   }
+
   .gallery img {
     display: block;
+    width: 100%;
     height: auto;
     aspect-ratio: 1 / 1;
+    min-height: 80px; /* ✅ FIX iOS fallback */
+    object-fit: cover;
   }
+
+  /* ✅ FIX CRÍTICO: resetear big-1/big-2 en mobile */
   .gallery-2 .big-1,
   .gallery-2 .big-2 {
-    grid-column: auto;
-    grid-row: auto;
+    grid-column: auto !important;
+    grid-row: auto !important;
   }
+
   .vertical-gallery, .square-grid { grid-template-columns: repeat(2, 1fr); }
   .gallery-container { grid-template-columns: 1fr; }
+
   .title-cards-section {
     width: min(100%, calc(100% - 24px));
     margin: 72px auto 100px;
   }
-  .title-cards-section-secondary {
-    margin-top: 20px;
-  }
-  .title-cards-heading {
-    width: min(400px, 72vw);
-  }
-  .title-cards-heading-secondary {
-    width: min(320px, 62vw);
-  }
-  .title-cards-heading-wide {
-    width: min(760px, 92vw);
-  }
-  .title-cards-heading-visualizers {
-    width: min(360px, 58vw);
-  }
+  .title-cards-section-secondary { margin-top: 20px; }
+  .title-cards-heading { width: min(400px, 72vw); }
+  .title-cards-heading-secondary { width: min(320px, 62vw); }
+  .title-cards-heading-wide { width: min(760px, 92vw); }
+  .title-cards-heading-visualizers { width: min(360px, 58vw); }
+
   .cards-grid {
     grid-template-columns: 1fr;
     max-width: 520px;
   }
-  .cards-grid-three {
-    max-width: 520px;
-  }
-  .cards-grid-png {
-    max-width: 520px;
-  }
-  .cards-grid-eventos {
-    max-width: 760px;
-  }
+  .cards-grid-three { max-width: 520px; }
+  .cards-grid-png { max-width: 520px; }
+  .cards-grid-eventos { max-width: 760px; }
+
   .visualizers-section {
     width: min(100%, calc(100% - 24px));
     margin: 72px auto 100px;
@@ -590,12 +726,8 @@ body.lightbox-open {
     margin: 72px auto 100px;
     padding: 0;
   }
-  .tony-black-heading {
-    width: min(860px, 94vw);
-  }
-  .tony-black-grid {
-    grid-template-columns: repeat(2, minmax(220px, 320px));
-  }
+  .tony-black-heading { width: min(860px, 94vw); }
+  .tony-black-grid { grid-template-columns: repeat(2, minmax(220px, 320px)); }
   .tony-black-grid-two {
     grid-template-columns: repeat(2, minmax(220px, 320px));
     max-width: 668px;
@@ -604,14 +736,11 @@ body.lightbox-open {
     grid-template-columns: minmax(220px, 0.92fr) minmax(300px, 1.08fr);
     max-width: 980px;
   }
-  .tony-black-editorial-grid-tight {
-    gap: 2px;
-  }
-  .tony-black-editorial-stack-tight {
-    gap: 2px;
-  }
+  .tony-black-editorial-grid-tight { gap: 2px; }
+  .tony-black-editorial-stack-tight { gap: 2px; }
   .tony-black-grid .tony-black-card:last-child {
     grid-column: 1 / -1;
+    -webkit-justify-self: center;
     justify-self: center;
     width: min(100%, 320px);
   }
@@ -622,108 +751,158 @@ body.lightbox-open {
 }
 
 @media (max-width: 768px) {
-  .hero-desktop-only {
-    display: none;
-  }
-  .hero-mobile-only {
-    display: block;
+  .hero-desktop-only { display: none !important; }
+  .hero-mobile-only  { display: block !important; }
+
+  .hero {
+    margin-bottom: 12px;
+    /* ✅ FIX iOS: -webkit-fill-available para ancho correcto en Safari */
+    width: 100%;
+    width: -webkit-fill-available;
   }
   .title-img {
-    width: min(340px, 82vw);
-    margin: 56px auto 24px auto;
+    width: min(352px, 88vw);
+    margin: 42px auto 18px auto;
+  }
+  .gallery {
+    width: min(100%, calc(100% - 14px));
+    margin: 0 auto 44px auto;
+    gap: 12px;
+  }
+  .duo-gallery {
+    width: min(100%, calc(100% - 14px));
+    margin: 28px auto 34px;
+    gap: 10px;
   }
   .vertical-gallery,
   .square-grid,
   .triple-gallery {
-    padding: 0 12px;
-    gap: 12px;
+    width: min(100%, calc(100% - 14px));
+    margin: 24px auto;
+    padding: 0 6px;
+    gap: 10px;
     box-sizing: border-box;
   }
   .gallery-container {
-    width: min(100%, calc(100% - 20px));
-    gap: 12px;
+    width: min(100%, calc(100% - 14px));
+    margin: 0 auto 10px;
+    gap: 10px;
     padding: 0;
   }
-  .grid-quad {
-    gap: 12px;
-  }
+  .grid-quad { gap: 10px; }
 }
 
 @media (max-width: 600px) {
   .gallery {
-    width: min(100%, calc(100% - 16px));
+    width: min(100%, calc(100% - 10px));
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
+    margin: 0 auto 30px auto;
   }
+
+  /* ✅ FIX CRÍTICO EP Artworks en iPhone:
+     Columna única, imágenes con dimensiones explícitas */
   .gallery-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    grid-auto-rows: auto !important;
   }
+
+  .gallery-2 img,
+  .gallery-2 .big-1,
+  .gallery-2 .big-2 {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1;
+    min-height: 260px;
+    object-fit: cover;
+    display: block;
+  }
+
   .vertical-gallery,
   .square-grid,
   .triple-gallery,
   .gallery-container,
   .duo-gallery {
-    width: min(100%, calc(100% - 16px));
+    width: min(100%, calc(100% - 10px));
   }
   .vertical-gallery,
   .square-grid,
   .triple-gallery {
-    padding: 0 8px;
-    gap: 10px;
+    margin: 18px auto;
+    padding: 0 4px;
+    gap: 8px;
   }
-  .cards-grid, .triple-gallery, .duo-gallery { grid-template-columns: 1fr; }
+
+  .cards-grid,
+  .triple-gallery,
+  .duo-gallery {
+    grid-template-columns: 1fr;
+  }
+  .duo-gallery {
+    margin: 20px auto 24px;
+    gap: 8px;
+  }
+  .gallery-container {
+    margin: 0 auto 8px;
+    gap: 8px;
+  }
+  .grid-quad { gap: 8px; }
+
   .hero-intro {
     width: 100%;
     height: auto;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+  }
+  .title-img {
+    width: min(330px, 90vw);
+    margin: 32px auto 14px auto;
   }
   .title-cards-section {
-    width: min(100%, calc(100% - 16px));
-    margin: 56px auto 80px;
+    width: min(100%, calc(100% - 12px));
+    margin: 40px auto 52px;
     padding: 0;
   }
-  .title-cards-section-secondary {
-    margin-top: 16px;
-  }
+  .title-cards-section-secondary { margin-top: 12px; }
   .title-cards-heading {
-    width: min(320px, 78vw);
-    margin-bottom: 16px;
+    width: min(320px, 82vw);
+    margin-bottom: 12px;
   }
-  .title-cards-heading-secondary {
-    width: min(260px, 70vw);
-  }
-  .title-cards-heading-wide {
-    width: min(540px, 94vw);
-  }
-  .title-cards-heading-visualizers {
-    width: min(280px, 70vw);
-  }
-  .title-cards-text-heading {
-    font-size: clamp(1.65rem, 8vw, 2.2rem);
-  }
+  .title-cards-heading-secondary { width: min(260px, 70vw); }
+  .title-cards-heading-wide     { width: min(540px, 94vw); }
+  .title-cards-heading-visualizers { width: min(280px, 70vw); }
+  .title-cards-text-heading { font-size: clamp(1.65rem, 8vw, 2.2rem); }
+
+  .cards-grid { gap: 10px; }
   .cards-grid-eventos {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     max-width: 100%;
-    gap: 12px;
+    gap: 10px;
   }
-  .card-item-eventos {
-    max-width: none;
+  .card-item-eventos { max-width: none; }
+
+  .card-item {
+    aspect-ratio: 16 / 9;
+    min-height: 56vw; /* ✅ FIX iOS: fallback relativo a viewport */
   }
+
   .visualizers-section {
-    width: min(100%, calc(100% - 16px));
-    margin: 56px auto 80px;
+    width: min(100%, calc(100% - 12px));
+    margin: 40px auto 52px;
   }
   .tony-black-section {
-    width: min(100%, calc(100% - 16px));
-    margin: 56px auto 80px;
+    width: min(100%, calc(100% - 12px));
+    margin: 40px auto 52px;
   }
+  .tony-black-section-secondary { margin-top: 24px; }
   .tony-black-heading {
     width: min(620px, 96vw);
-    margin-bottom: 18px;
+    margin-bottom: 14px;
   }
   .tony-black-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 10px;
   }
   .tony-black-grid-two {
     grid-template-columns: 1fr;
@@ -731,45 +910,39 @@ body.lightbox-open {
   }
   .tony-black-editorial-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 10px;
   }
-  .tony-black-editorial-stack {
-    gap: 14px;
-  }
-  .tony-black-editorial-feature {
-    height: auto;
-  }
-  .tony-black-editorial-feature img {
-    height: auto;
-  }
+  .tony-black-editorial-stack { gap: 10px; }
+  .tony-black-editorial-feature { height: auto; }
+  .tony-black-editorial-feature img { height: auto; }
   .tony-black-editorial-grid-tight,
-  .tony-black-editorial-stack-tight {
-    gap: 8px;
-  }
+  .tony-black-editorial-stack-tight { gap: 8px; }
   .tony-black-grid .tony-black-card:last-child {
     grid-column: auto;
     width: 100%;
   }
   .tony-black-caption {
     width: min(420px, 88vw);
-    margin-top: 18px;
+    margin-top: 12px;
   }
   .visualizer-caption {
     width: auto;
     height: clamp(16px, 4.4vw, 24px);
-    margin-top: 8px;
+    margin-top: 4px;
   }
   .card-item-png {
-    min-height: 180px;
-    padding: 10px;
+    min-height: 160px;
+    padding: 8px;
     width: min(100%, 420px);
   }
   .card-item-png img {
-    max-height: 220px;
-    transform: translate(6px, 5px);
+    max-height: 200px;
+    -webkit-transform: translate(4px, 3px);
+    transform: translate(4px, 3px);
   }
   .card-item-png:hover img {
-    transform: translate(6px, 5px) scale(1.03);
+    -webkit-transform: translate(4px, 3px) scale(1.03);
+    transform: translate(4px, 3px) scale(1.03);
   }
   .close {
     top: 16px;
@@ -778,9 +951,17 @@ body.lightbox-open {
   }
 }
 
+/* ✅ FIX iOS: safe area para iPhones con notch / Dynamic Island */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .js-scroll-reveal .reveal-on-scroll {
     opacity: 1;
+    -webkit-transform: none;
     transform: none;
     transition: none;
   }
