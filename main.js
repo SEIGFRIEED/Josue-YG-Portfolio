@@ -33,17 +33,52 @@ document.addEventListener("DOMContentLoaded", () => {
     "main > .visualizers-section"
   ];
 
+  const getImageSource = (img) => {
+    if (!img) return "";
+
+    const picture = img.closest("picture");
+    const source = picture ? picture.querySelector("source") : null;
+
+    return (
+      img.getAttribute("data-full") ||
+      img.getAttribute("data-src") ||
+      img.currentSrc ||
+      img.src ||
+      img.getAttribute("src") ||
+      (source ? source.getAttribute("srcset") : "") ||
+      ""
+    ).split(",")[0].trim().split(" ")[0];
+  };
+
   const openLightbox = (clickedImg) => {
     if (!lightbox || !lightboxImg) return;
 
-    const previewSrc = clickedImg.currentSrc || clickedImg.src || clickedImg.getAttribute("src");
+    const previewSrc = getImageSource(clickedImg);
     if (!previewSrc) return;
 
     lockedScrollY = window.scrollY || window.pageYOffset || 0;
     document.body.style.setProperty("--scroll-lock-top", `-${lockedScrollY}px`);
+
     lightboxImg.removeAttribute("srcset");
-    lightboxImg.src = previewSrc;
-    lightboxImg.alt = clickedImg.alt || "preview";
+    lightboxImg.removeAttribute("sizes");
+    lightboxImg.style.opacity = "0";
+
+    const tempImg = new Image();
+
+    tempImg.onload = () => {
+      lightboxImg.src = previewSrc;
+      lightboxImg.alt = clickedImg.alt || "preview";
+      lightboxImg.style.opacity = "1";
+    };
+
+    tempImg.onerror = () => {
+      lightboxImg.src = clickedImg.src || previewSrc;
+      lightboxImg.alt = clickedImg.alt || "preview";
+      lightboxImg.style.opacity = "1";
+    };
+
+    tempImg.src = previewSrc;
+
     document.body.classList.add("lightbox-open");
     lightbox.classList.add("active");
   };
@@ -55,6 +90,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     lightbox.classList.remove("active");
     lightboxImg.src = "";
+    lightboxImg.style.opacity = "1";
+
     document.body.classList.remove("lightbox-open");
     document.body.style.removeProperty("--scroll-lock-top");
 
@@ -73,6 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     if (prefersReducedMotion || !("IntersectionObserver" in window)) {
       revealTargets.forEach((element) => {
         element.classList.add("is-visible");
