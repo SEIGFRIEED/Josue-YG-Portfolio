@@ -675,6 +675,15 @@ body.lightbox-open {
   position: relative;
   z-index: 1;
 }
+#lightbox-img {
+  background: transparent;
+  opacity: 1;
+  visibility: visible;
+}
+
+#lightbox.active #lightbox-img {
+  display: block;
+}
 
 /* =====================================================
    RESPONSIVE
