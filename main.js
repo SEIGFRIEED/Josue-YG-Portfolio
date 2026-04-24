@@ -2,9 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const lightbox = document.getElementById("lightbox");
   const lightboxImg = document.getElementById("lightbox-img");
   const closeBtn = document.querySelector(".close");
-  const LIGHTBOX_CLOSE_DURATION = 240;
   let lockedScrollY = 0;
-  let closeLightboxTimer = null;
 
   const allowedSelectors = [
     ".gallery img",
@@ -38,44 +36,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const openLightbox = (clickedImg) => {
     if (!lightbox || !lightboxImg) return;
 
-    if (closeLightboxTimer) {
-      clearTimeout(closeLightboxTimer);
-      closeLightboxTimer = null;
-    }
+    const previewSrc = clickedImg.currentSrc || clickedImg.src || clickedImg.getAttribute("src");
+    if (!previewSrc) return;
 
     lockedScrollY = window.scrollY || window.pageYOffset || 0;
     document.body.style.setProperty("--scroll-lock-top", `-${lockedScrollY}px`);
-    lightboxImg.src = clickedImg.currentSrc || clickedImg.src;
+    lightboxImg.removeAttribute("srcset");
+    lightboxImg.src = previewSrc;
     lightboxImg.alt = clickedImg.alt || "preview";
     document.body.classList.add("lightbox-open");
-    lightbox.classList.remove("is-closing");
     lightbox.classList.add("active");
   };
 
   const closeLightbox = () => {
-    if (
-      !lightbox ||
-      !lightboxImg ||
-      !lightbox.classList.contains("active") ||
-      lightbox.classList.contains("is-closing")
-    ) return;
+    if (!lightbox || !lightboxImg || !lightbox.classList.contains("active")) return;
 
     const restoreScrollY = lockedScrollY;
 
-    lightbox.classList.add("is-closing");
+    lightbox.classList.remove("active");
+    lightboxImg.src = "";
+    document.body.classList.remove("lightbox-open");
+    document.body.style.removeProperty("--scroll-lock-top");
 
-    closeLightboxTimer = setTimeout(() => {
-      lightbox.classList.remove("active", "is-closing");
-      lightboxImg.src = "";
-      document.body.classList.remove("lightbox-open");
-      document.body.style.removeProperty("--scroll-lock-top");
-
-      requestAnimationFrame(() => {
-        window.scrollTo(0, restoreScrollY);
-      });
-
-      closeLightboxTimer = null;
-    }, LIGHTBOX_CLOSE_DURATION);
+    requestAnimationFrame(() => {
+      window.scrollTo(0, restoreScrollY);
+    });
   };
 
   const setupScrollReveal = () => {
