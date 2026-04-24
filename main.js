@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const lightbox = document.getElementById("lightbox");
   const lightboxImg = document.getElementById("lightbox-img");
   const closeBtn = document.querySelector(".close");
+  const LIGHTBOX_CLOSE_DURATION = 240;
+  let lockedScrollY = 0;
+  let closeLightboxTimer = null;
 
   const allowedSelectors = [
     ".gallery img",
@@ -32,12 +35,47 @@ document.addEventListener("DOMContentLoaded", () => {
     "main > .visualizers-section"
   ];
 
-  const closeLightbox = () => {
+  const openLightbox = (clickedImg) => {
     if (!lightbox || !lightboxImg) return;
 
-    lightbox.classList.remove("active");
-    lightboxImg.src = "";
-    document.body.classList.remove("lightbox-open");
+    if (closeLightboxTimer) {
+      clearTimeout(closeLightboxTimer);
+      closeLightboxTimer = null;
+    }
+
+    lockedScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.setProperty("--scroll-lock-top", `-${lockedScrollY}px`);
+    lightboxImg.src = clickedImg.currentSrc || clickedImg.src;
+    lightboxImg.alt = clickedImg.alt || "preview";
+    document.body.classList.add("lightbox-open");
+    lightbox.classList.remove("is-closing");
+    lightbox.classList.add("active");
+  };
+
+  const closeLightbox = () => {
+    if (
+      !lightbox ||
+      !lightboxImg ||
+      !lightbox.classList.contains("active") ||
+      lightbox.classList.contains("is-closing")
+    ) return;
+
+    const restoreScrollY = lockedScrollY;
+
+    lightbox.classList.add("is-closing");
+
+    closeLightboxTimer = setTimeout(() => {
+      lightbox.classList.remove("active", "is-closing");
+      lightboxImg.src = "";
+      document.body.classList.remove("lightbox-open");
+      document.body.style.removeProperty("--scroll-lock-top");
+
+      requestAnimationFrame(() => {
+        window.scrollTo(0, restoreScrollY);
+      });
+
+      closeLightboxTimer = null;
+    }, LIGHTBOX_CLOSE_DURATION);
   };
 
   const setupScrollReveal = () => {
@@ -96,13 +134,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const clickedImg = e.target.closest(allowedSelectors.join(", "));
       if (!clickedImg) return;
 
-      lightbox.classList.add("active");
-      lightboxImg.src = clickedImg.currentSrc || clickedImg.src;
-      lightboxImg.alt = clickedImg.alt || "preview";
-      document.body.classList.add("lightbox-open");
+      e.preventDefault();
+      openLightbox(clickedImg);
     });
 
-    closeBtn.addEventListener("click", closeLightbox);
+    closeBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeLightbox();
+    });
 
     lightbox.addEventListener("click", (e) => {
       if (e.target === lightbox) {
