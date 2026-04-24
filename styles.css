@@ -617,7 +617,8 @@ main {
 #lightbox {
   position: fixed;
   inset: 0;
-  display: none;
+  display: -webkit-flex;
+  display: flex;
   -webkit-justify-content: center;
   justify-content: center;
   -webkit-align-items: center;
@@ -634,13 +635,39 @@ main {
   /* ✅ FIX iOS: forzar GPU para el fixed */
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.28s ease,
+    visibility 0s linear 0.28s;
 }
 
-#lightbox.active { display: -webkit-flex; display: flex; }
+#lightbox.active,
+#lightbox.is-closing {
+  visibility: visible;
+}
+
+#lightbox.active {
+  opacity: 1;
+  pointer-events: auto;
+  transition:
+    opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 0s;
+}
+
+#lightbox.is-closing {
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.24s ease,
+    visibility 0s linear 0s;
+}
 
 body.lightbox-open {
-  /* ✅ FIX iOS: en lugar de overflow:hidden en body usamos position:fixed */
   position: fixed;
+  top: var(--scroll-lock-top, 0);
+  left: 0;
   width: 100%;
   overflow: hidden;
 }
@@ -657,6 +684,13 @@ body.lightbox-open {
   padding: 10px;
   /* ✅ FIX iOS: evitar delay de 300ms en tap */
   touch-action: manipulation;
+  opacity: 0;
+  -webkit-transform: translate3d(0, -12px, 0);
+  transform: translate3d(0, -12px, 0);
+  transition:
+    opacity 0.24s ease,
+    -webkit-transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 #lightbox-img {
@@ -666,6 +700,32 @@ body.lightbox-open {
   border-radius: 8px;
   -webkit-border-radius: 8px;
   box-shadow: 0 0 50px rgba(255,255,255,0.1);
+  opacity: 0;
+  -webkit-transform: translate3d(0, 18px, 0) scale(0.965);
+  transform: translate3d(0, 18px, 0) scale(0.965);
+  transition:
+    opacity 0.24s ease,
+    -webkit-transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#lightbox.active .close,
+#lightbox.active #lightbox-img {
+  opacity: 1;
+  -webkit-transform: translate3d(0, 0, 0) scale(1);
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+#lightbox.is-closing .close {
+  opacity: 0;
+  -webkit-transform: translate3d(0, -10px, 0);
+  transform: translate3d(0, -10px, 0);
+}
+
+#lightbox.is-closing #lightbox-img {
+  opacity: 0;
+  -webkit-transform: translate3d(0, 14px, 0) scale(0.975);
+  transform: translate3d(0, 14px, 0) scale(0.975);
 }
 
 /* =====================================================
