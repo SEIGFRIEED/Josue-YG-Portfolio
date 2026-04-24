@@ -622,37 +622,22 @@ main {
   justify-content: center;
   -webkit-align-items: center;
   align-items: center;
-  background: rgba(0, 0, 0, 0.9);
-  /* ✅ FIX iOS: prefijo webkit para backdrop-filter */
-  -webkit-backdrop-filter: blur(15px);
-  backdrop-filter: blur(15px);
+  background: rgba(0, 0, 0, 0.98);
   z-index: 9999;
   padding: 20px;
   /* ✅ FIX iOS: safe area para el notch */
   padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
   overscroll-behavior: contain;
-  /* ✅ FIX iOS: forzar GPU para el fixed */
-  -webkit-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   pointer-events: none;
-}
-
-#lightbox.active,
-#lightbox.is-closing {
-  display: -webkit-flex;
-  display: flex;
+  box-sizing: border-box;
 }
 
 #lightbox.active {
+  display: -webkit-flex;
+  display: flex;
   pointer-events: auto;
-  -webkit-animation: lightbox-overlay-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation: lightbox-overlay-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-#lightbox.is-closing {
-  pointer-events: none;
-  -webkit-animation: lightbox-overlay-out 0.24s ease both;
-  animation: lightbox-overlay-out 0.24s ease both;
 }
 
 body.lightbox-open {
@@ -664,184 +649,31 @@ body.lightbox-open {
 }
 
 .close {
-  position: absolute;
-  top: 24px;
-  right: 30px;
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
   color: #fff;
   font-size: 2.8rem;
   line-height: 1;
   cursor: pointer;
-  /* ✅ FIX iOS: área tap más grande para dedos */
   padding: 10px;
-  /* ✅ FIX iOS: evitar delay de 300ms en tap */
   touch-action: manipulation;
-  opacity: 1;
-  -webkit-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
   z-index: 2;
 }
 
 #lightbox-img {
-  max-width: 95vw;
-  max-height: 90vh;
+  width: auto;
+  height: auto;
+  max-width: min(95vw, 1400px);
+  max-height: calc(100vh - 72px);
   object-fit: contain;
   border-radius: 8px;
   -webkit-border-radius: 8px;
   box-shadow: 0 0 50px rgba(255,255,255,0.1);
   display: block;
-  opacity: 1;
-  -webkit-transform: translate3d(0, 0, 0) scale(1);
-  transform: translate3d(0, 0, 0) scale(1);
-}
-
-#lightbox.active .close,
-#lightbox.active #lightbox-img {
-  -webkit-animation-fill-mode: both;
-  animation-fill-mode: both;
-}
-
-#lightbox.active .close {
-  -webkit-animation: lightbox-close-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation: lightbox-close-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-#lightbox.active #lightbox-img {
-  -webkit-animation: lightbox-image-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation: lightbox-image-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-#lightbox.is-closing .close {
-  -webkit-animation: lightbox-close-out 0.2s ease both;
-  animation: lightbox-close-out 0.2s ease both;
-}
-
-#lightbox.is-closing #lightbox-img {
-  -webkit-animation: lightbox-image-out 0.22s ease both;
-  animation: lightbox-image-out 0.22s ease both;
-}
-
-@-webkit-keyframes lightbox-overlay-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes lightbox-overlay-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@-webkit-keyframes lightbox-overlay-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
-@keyframes lightbox-overlay-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
-@-webkit-keyframes lightbox-image-in {
-  from {
-    opacity: 0;
-    -webkit-transform: translate3d(0, 18px, 0) scale(0.965);
-    transform: translate3d(0, 18px, 0) scale(0.965);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translate3d(0, 0, 0) scale(1);
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes lightbox-image-in {
-  from {
-    opacity: 0;
-    -webkit-transform: translate3d(0, 18px, 0) scale(0.965);
-    transform: translate3d(0, 18px, 0) scale(0.965);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translate3d(0, 0, 0) scale(1);
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@-webkit-keyframes lightbox-image-out {
-  from {
-    opacity: 1;
-    -webkit-transform: translate3d(0, 0, 0) scale(1);
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    opacity: 0;
-    -webkit-transform: translate3d(0, 14px, 0) scale(0.978);
-    transform: translate3d(0, 14px, 0) scale(0.978);
-  }
-}
-
-@keyframes lightbox-image-out {
-  from {
-    opacity: 1;
-    -webkit-transform: translate3d(0, 0, 0) scale(1);
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    opacity: 0;
-    -webkit-transform: translate3d(0, 14px, 0) scale(0.978);
-    transform: translate3d(0, 14px, 0) scale(0.978);
-  }
-}
-
-@-webkit-keyframes lightbox-close-in {
-  from {
-    opacity: 0;
-    -webkit-transform: translate3d(0, -10px, 0);
-    transform: translate3d(0, -10px, 0);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes lightbox-close-in {
-  from {
-    opacity: 0;
-    -webkit-transform: translate3d(0, -10px, 0);
-    transform: translate3d(0, -10px, 0);
-  }
-  to {
-    opacity: 1;
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@-webkit-keyframes lightbox-close-out {
-  from {
-    opacity: 1;
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    opacity: 0;
-    -webkit-transform: translate3d(0, -8px, 0);
-    transform: translate3d(0, -8px, 0);
-  }
-}
-
-@keyframes lightbox-close-out {
-  from {
-    opacity: 1;
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    opacity: 0;
-    -webkit-transform: translate3d(0, -8px, 0);
-    transform: translate3d(0, -8px, 0);
-  }
+  margin: auto;
+  position: relative;
+  z-index: 1;
 }
 
 /* =====================================================
@@ -969,6 +801,13 @@ body.lightbox-open {
 }
 
 @media (max-width: 600px) {
+  #lightbox {
+    padding: max(14px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+  #lightbox-img {
+    max-width: calc(100vw - 20px);
+    max-height: calc(100svh - 88px);
+  }
   .gallery {
     width: min(100%, calc(100% - 10px));
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1121,8 +960,8 @@ body.lightbox-open {
     transform: translate(4px, 3px) scale(1.03);
   }
   .close {
-    top: 16px;
-    right: 20px;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
     font-size: 2.2rem;
   }
 }
